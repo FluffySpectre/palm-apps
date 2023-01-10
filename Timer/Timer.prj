@@ -1,0 +1,240 @@
+"mdl"
+7
+"Timer","appl","Bjoe",1032,505,0
+"Sub Project_Startup()
+	Global timerStarted as Short
+	Global minutes as Integer
+	Global seconds as Integer
+End Sub
+
+Sub StartTimer()
+	SysInfoSet(~Timer~, 1000)
+	timerStarted = 1
+End Sub
+
+Sub StopTimer()
+	SysInfoSet(~Timer~, 0)
+	timerStarted = 0
+End Sub
+
+
+
+
+
+
+"
+0
+0
+"Timer"
+"1.0"
+""
+"vew"
+4,1003,#FALSE#,#TRUE#,#TRUE#,0,0,0,160,160,0,#FALSE#,#TRUE#
+"Timer"
+"Form1003"
+""
+0
+"Sub Form1003_After()
+	DrawLine 0, 90, 160, 90, nsbGray
+End Sub"
+"Sub Form1003_Event()
+	If GetEventType() = nsbTimer Then
+  		SysTrapSub 304,0 ' reset auto off timer
+  		
+  		' guard
+  		If timerStarted = 0 Then
+  			Exit Sub
+  		EndIf
+  		
+  		seconds = seconds - 1
+  		If seconds < 0 Then
+  			If minutes > 0 Then
+  				minutes = minutes - 1
+  				seconds = 59
+  			Else
+  				seconds = 0
+  				Call StopTimer()
+  				Call TimerFinished
+  			EndIf
+  		EndIf
+		
+		Call UpdateTimerTexts
+		
+		If timerStarted = 1 Then
+			SysInfoSet(~Timer~, 1000)
+		EndIf
+	End If
+End Sub
+	
+Sub SetTimer(mins as Integer)
+	minutes = mins
+	seconds = 0
+	
+	lblTimerFinished.Hide
+	btnTimerDots.Show
+	btnTimerMinutes.Show
+	btnTimerSeconds.Show
+	
+	Call UpdateTimerTexts
+	Call StopTimer
+	Call StartTimer
+End Sub	
+
+Sub UpdateTimerTexts()
+	If minutes >= 10 Then
+		btnTimerMinutes.Text = str(minutes)
+	Else
+		btnTimerMinutes.Text = ~0~ + str(minutes)
+	EndIf
+		
+	If seconds >= 10 Then
+		btnTimerSeconds.Text = str(seconds)
+	Else 
+		btnTimerSeconds.Text = ~0~ + str(seconds)
+	EndIf
+End Sub
+	
+Sub TimerFinished()
+	btnTimerDots.Hide
+	btnTimerMinutes.Hide
+	btnTimerSeconds.Hide
+	lblTimerFinished.Show
+	
+	Dim i as Integer
+	For i = 1 To 3
+		Beep
+		Delay 1
+	Next
+End Sub
+"
+0,0,0,0
+"but"
+1
+#TRUE#,#FALSE#,#TRUE#
+"obj"
+3
+"but","btnTimerMinutes",1014,60,56,12,16,#TRUE#,7,"00",0,0,0
+""
+"but"
+1
+#TRUE#,#FALSE#,#TRUE#
+"obj"
+3
+"but","btnTimerSeconds",1015,80,56,12,16,#TRUE#,7,"00",0,0,0
+""
+"lbl"
+1
+"obj"
+3
+"lbl","Label1017",1017,60,40,11,15,#TRUE#,0,"Min",0,0,0
+""
+"lbl"
+1
+"obj"
+3
+"lbl","Label1018",1018,80,40,11,15,#TRUE#,0,"Sek",0,0,0
+""
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","Button1020",1020,40,100,16,16,#TRUE#,0,"1",0,0,0
+"Sub object1020()
+	SetTimer(1)
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","Button1021",1021,60,100,16,16,#TRUE#,0,"3",0,0,0
+"Sub object1021()
+	SetTimer(3)
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","Button1022",1022,80,100,16,16,#TRUE#,0,"5",0,0,0
+"Sub object1022()
+	SetTimer(5)
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","Button1023",1023,100,100,16,16,#TRUE#,0,"10",0,0,0
+"Sub object1023()
+	SetTimer(10)
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","Button1024",1024,40,120,16,16,#TRUE#,0,"13",0,0,0
+"Sub object1024()
+	SetTimer(13)
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","Button1025",1025,60,120,16,16,#TRUE#,0,"15",0,0,0
+"Sub object1025()
+	SetTimer(15)
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","Button1026",1026,80,120,16,16,#TRUE#,0,"20",0,0,0
+"Sub object1026()
+	SetTimer(20)
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","Button1027",1027,100,120,16,16,#TRUE#,0,"30",0,0,0
+"Sub object1027()
+	SetTimer(30)
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","Button1028",1028,40,140,12,36,#TRUE#,0,"Start",0,0,0
+"Sub object1028()
+	Call StartTimer
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","Button1029",1029,80,140,12,36,#TRUE#,0,"Stop",0,0,0
+"Sub object1029()
+	Call StopTimer
+End Sub"
+"but"
+1
+#TRUE#,#FALSE#,#TRUE#
+"obj"
+3
+"but","btnTimerDots",1030,76,56,12,4,#TRUE#,2,":",0,0,0
+""
+"lbl"
+1
+"obj"
+3
+"lbl","lblTimerFinished",1032,36,56,15,84,#FALSE#,7,"TIMER BEENDET!",0,0,0
+""
+"end"

@@ -1,0 +1,961 @@
+"mdl"
+7
+"PasswortManager","appl","Bjoe",1111,505,0
+"Sub Project_Startup()
+	Global CreatorID as String
+	CreatorID = ~Bjoe~
+	
+	Global pwdDatabase as Database
+	Global settingsDatabase as Database
+	
+	Global enteredUserPassword as String
+	Global userPassword as String
+	userPassword = ~1234~
+	Global activeForm as String
+	Global selectedPasswordIndex as Integer
+	Global selectedPasswordIndexSaved as Integer
+	
+	' selected password info
+	Global g_SelectedName as String
+	Global g_SelectedUserID as String
+	Global g_SelectedPassword as String
+	Global g_SelectedInfo as String
+	
+	Call InitializePasswordDatabase
+	Call InitializeSettingsDatabase
+	
+	' setup settings
+	Dim result as Integer
+	result = dbFind(settingsDatabase, ~PIN~)
+	If result = 0 Then
+	   	dbRead(settingsDatabase, ~PIN~, userPassword)
+	Else
+		result = dbInsert(settingsDatabase, ~PIN~, userPassword)
+	End If
+End Sub
+	
+Sub InitializePasswordDatabase()
+	Dim result as Integer
+	Dim DatabaseName as String
+	DatabaseName = ~Bjoepwddatabase~
+	
+	result = dbOpen(pwdDatabase, DatabaseName, 0)
+	If result Not= 0 Then
+		result = dbcreate(pwdDatabase, DatabaseName, 0, CreatorID)
+		
+		If (result Not= 0) And (result Not= 537) Then
+			MsgBox ~Fehler ~ + str(result) + ~ beim Erstellen der Datenbank!~ 
+			Stop
+		End If
+		
+		result = dbOpen(pwdDatabase, DatabaseName, 0)
+	EndIf
+End Sub
+
+Sub InitializeSettingsDatabase()
+	Dim result as Integer
+	Dim DatabaseName as String
+	DatabaseName = ~Bjoesettingsdatabase~
+	
+	result = dbOpen(settingsDatabase, DatabaseName, 0)
+	If result Not= 0 Then
+		result = dbcreate(settingsDatabase, DatabaseName, 0, CreatorID)
+		
+		If (result Not= 0) And (result Not= 537) Then
+			MsgBox ~Fehler ~ + str(result) + ~ beim Erstellen der Datenbank!~ 
+			Stop
+		End If
+		
+		result = dbOpen(settingsDatabase, DatabaseName, 0)
+	EndIf
+End Sub
+
+Sub SetSelectedPassword(name as String, userID as String, password as String, info as String)
+	g_SelectedName = name
+	g_SelectedUserID = userID
+	g_SelectedPassword = password
+	g_SelectedInfo = info
+End Sub
+
+Sub ResetSelectedPassword()
+	SetSelectedPassword(~~, ~~, ~~, ~~)
+	selectedPasswordIndexSaved = 0
+End Sub
+"
+0
+0
+"Pass"
+"1.0"
+"Sub Project_Termination()
+	dbClose(pwdDatabase)
+	dbClose(settingsDatabase)
+End Sub"
+"mnu"
+2,"mnuMain"
+1080
+1
+"menu"
+1
+"PasswortManager","",1081
+2
+"menu"
+1
+"PIN ändern","P","",1085
+"Sub Menu1085_click()
+	NextForm ~frmChangePIN~
+End Sub"
+"menu"
+1
+"Beenden","B","",1087
+"Sub Menu1087_click()
+	Stop
+End Sub"
+"vew"
+4,1003,#FALSE#,#TRUE#,#TRUE#,0,0,0,160,160,0,#FALSE#,#TRUE#
+"Meine Passwörter"
+"Form1003"
+"Sub Form1003_Before()
+	If activeForm Not= ~Form1003~ Then
+		activeForm = ~Form1003~
+		
+		Call RefreshPasswordList
+	EndIf
+End Sub
+
+Sub ResetMainFields()
+	selectedPasswordIndex = 0
+	lstPasswords.Clear
+End Sub
+
+Sub RefreshPasswordList()
+	lstPasswords.Clear
+
+	' get number of passwords in the database
+	Dim numPasswordRecords as Integer
+	numPasswordRecords = dbGetnorecs(pwdDatabase)
+	
+	Dim validPasswordRecords as Integer
+	
+	' get the passwords of the database
+	Dim name as String
+	Dim recordNumber as Integer
+	For recordNumber=1 to numPasswordRecords
+		' iterate and get each password entry
+		dbPosition(pwdDatabase, recordNumber, 0)
+		dbGet(pwdDatabase, name)
+		
+		If name Not= ~~ Then
+			lstPasswords.Add name
+			validPasswordRecords = validPasswordRecords + 1
+		EndIf
+	Next
+	
+	If validPasswordRecords = 0 Then
+		lblMainNoEntries.Show
+	Else
+		lblMainNoEntries.Hide
+	EndIf
+End Sub"
+0
+"Sub Form1003_After()
+End Sub
+	
+
+"
+"Sub Form1003_Event()
+	Dim eventType as Integer
+	
+	eventType = GetEventType()
+	
+	If eventType = NsbFormClose Then
+		Call ResetMainFields
+	EndIf
+	
+	If eventType = nsbPenUp Then
+		If lstPasswords.Selected Not= selectedPasswordIndex Then
+			Call SelectPasswordEntry(lstPasswords.Selected)
+			NextForm ~frmDetails~
+		EndIf
+	EndIf
+	
+	Dim key as String
+	If eventType = nsbKeyOrButton Then
+	    key = GetKey()
+	    If asc(key) = 5 Then
+	        MenuDraw ~mnuMain~
+	   End If
+	End If
+End Sub
+	
+Sub SelectPasswordEntry(index as Integer)
+	selectedPasswordIndex = index
+	selectedPasswordIndexSaved = index
+	
+	' get the passwords of the database
+	Dim name as String
+	Dim userID as String
+	Dim password as String
+	Dim info as String
+	
+	' get the infos of the password entry
+	dbPosition(pwdDatabase, index, 0)
+	dbGet(pwdDatabase, name, userID, password, info)
+	
+	' set the values to the global ones
+	SetSelectedPassword(name, userID, password, info)
+End Sub
+"
+0,0,0,0
+"lst"
+2
+4
+""
+"obj"
+3
+"lst","lstPasswords",1005,1,20,120,158,#TRUE#,2,"",0,0,0
+"Sub object1005()
+	
+End Sub"
+"lbl"
+1
+"obj"
+3
+"lbl","lblMainNoEntries",1105,2,21,14,148,#FALSE#,2,"Tippe auf 'Neu' zum Starten",0,0,0
+""
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","Button1006",1006,1,144,12,36,#TRUE#,0,"Neu",0,0,0
+"Sub object1006()
+	NextForm ~frmNew~
+End Sub"
+"vew"
+4,1008,#FALSE#,#TRUE#,#TRUE#,0,0,0,160,160,0,#FALSE#,#TRUE#
+"Neues Passwort"
+"frmNew"
+"Sub Form1008_Before()
+	If activeForm Not= ~frmNew~ Then
+		activeForm = ~frmNew~
+		
+		fldName.SetFocus
+	EndIf
+End Sub
+	
+Sub ResetNewFields()
+	fldName.Text = ~~
+	fldUserID.Text = ~~
+	fldPassword.Text = ~~
+	fldInfo.Text = ~~
+End Sub
+"
+0
+"Sub Form1008_After()
+
+End Sub"
+"Sub Form1008_Event()
+	Dim eventType as Integer
+	
+	eventType = GetEventType()
+	
+	If eventType = NsbFormClose Then
+		Call ResetNewFields
+	EndIf
+End Sub"
+0,0,0,0
+"fld"
+1
+#TRUE#,#TRUE#,#TRUE#,#FALSE#,#TRUE#,80,#FALSE#,#FALSE#,#FALSE#
+"obj"
+3
+"fld","fldName",1010,44,20,12,112,#TRUE#,0,"",0,0,0
+""
+"lbl"
+1
+"obj"
+3
+"lbl","Label1012",1012,15,20,11,26,#TRUE#,0,"Name:",0,0,0
+""
+"lbl"
+1
+"obj"
+3
+"lbl","Label1013",1013,10,40,11,31,#TRUE#,0,"User ID:",0,0,0
+""
+"fld"
+1
+#TRUE#,#TRUE#,#TRUE#,#FALSE#,#TRUE#,80,#FALSE#,#FALSE#,#FALSE#
+"obj"
+3
+"fld","fldUserID",1014,44,40,12,112,#TRUE#,0,"",0,0,0
+""
+"lbl"
+1
+"obj"
+3
+"lbl","Label1016",1016,2,60,11,39,#TRUE#,0,"Passwort:",0,0,0
+""
+"fld"
+1
+#TRUE#,#TRUE#,#TRUE#,#FALSE#,#TRUE#,80,#FALSE#,#FALSE#,#FALSE#
+"obj"
+3
+"fld","fldPassword",1017,44,60,12,112,#TRUE#,0,"",0,0,0
+""
+"lbl"
+1
+"obj"
+3
+"lbl","Label1019",1019,23,80,11,18,#TRUE#,0,"Info:",0,0,0
+""
+"fld"
+1
+#TRUE#,#TRUE#,#FALSE#,#FALSE#,#TRUE#,160,#FALSE#,#TRUE#,#FALSE#
+"obj"
+3
+"fld","fldInfo",1020,44,80,60,112,#TRUE#,0,"",0,0,0
+""
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","Button1009",1009,1,144,12,48,#TRUE#,0,"Speichern",0,0,0
+"Sub object1009()
+	Dim checkInputsResult as Short
+	checkInputsResult = CheckInputs()
+	If checkInputsResult = 0 Then
+		Exit Sub
+	EndIf
+	
+	Dim saveResult as Short
+	saveResult = SavePasswordInfo()
+	
+	If saveResult = 1 Then
+		NextForm ~Form1003~
+	EndIf
+End Sub
+
+Function CheckInputs() as Short 
+	If fldName.Text = ~~ Then
+		MsgBox ~Ein Name fehlt!~
+		CheckInputs = 0
+		Exit Function
+	ElseIf fldPassword.Text = ~~ Then
+		MsgBox ~Ein Passwort fehlt!~
+		CheckInputs = 0
+		Exit Function
+	EndIf
+	
+	CheckInputs = 1
+End Function
+
+Function SavePasswordInfo() as Short
+	Dim result as Integer
+	
+	' get the current record number
+	Dim numPasswordRecords as Integer
+	numPasswordRecords = dbGetnorecs(pwdDatabase)
+	
+	' set the database position
+	dbPosition(pwdDatabase, numPasswordRecords + 1, 0)
+	
+	result = dbPut(pwdDatabase, fldName.Text, fldUserID.Text, fldPassword.Text, fldInfo.Text)
+	
+	If result = 0 Then
+		MsgBox ~Passwort hinzugefügt!~
+		
+		SavePasswordInfo = 1
+	Else
+		If result = 1 Then
+			MsgBox ~Fehler! Ein Eintrag mit diesem Namen existiert bereits!~
+		Else
+			MsgBox ~Fehler ~ + str(result) + ~ beim Erstellen des Eintrags!~
+		EndIf
+		
+		SavePasswordInfo = 0
+		
+	EndIf
+		
+End Function
+"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","Button1023",1023,56,144,12,48,#TRUE#,0,"Abbrechen",0,0,0
+"Sub object1023()
+	NextForm ~Form1003~
+End Sub
+
+"
+"vew"
+4,1026,#FALSE#,#TRUE#,#TRUE#,0,0,0,160,160,0,#FALSE#,#TRUE#
+"Details"
+"frmDetails"
+"Sub Form1026_Before()
+	If activeForm Not= ~frmDetails~ Then
+		activeForm = ~frmDetails~
+		
+		Call RefreshDetails
+	EndIf
+End Sub
+
+Sub ResetDetailsFields()
+	fldDetailsName.Text = ~~
+	lblDetailsUserID.Hide
+	fldDetailsUserID.Text = ~~
+	lblDetailsPassword.Hide
+	fldDetailsPassword.Text = ~~
+	fldDetailsInfo.Text = ~~
+End Sub
+
+Sub RefreshDetails()
+	Dim calcTop as Integer
+	Dim topOffset as Integer
+	Dim topOffsetCredentials as Integer
+	topOffset = 20
+	topOffsetCredentials = 12
+	
+	If g_SelectedName Not= ~~ Then
+		calcTop = topOffset
+		fldDetailsName.Text = g_SelectedName
+	EndIf
+	
+	If g_SelectedUserID Not= ~~ Then
+		calcTop = calcTop + topOffset
+		lblDetailsUserID.Top = calcTop
+		fldDetailsUserID.Top = calcTop + 12
+		fldDetailsUserID.Text = g_SelectedUserID
+		lblDetailsUserID.Show
+		fldDetailsUserID.Show
+	EndIf
+	
+	If g_SelectedPassword Not= ~~ Then
+		If g_SelectedUserID Not= ~~ Then
+			calcTop = calcTop + topOffset + 12
+		Else
+			calcTop = calcTop + topOffset
+		EndIf
+		lblDetailsPassword.Top = calcTop
+		fldDetailsPassword.Top = calcTop + 12
+		lblDetailsPassword.Show
+		fldDetailsPassword.Text = g_SelectedPassword
+	EndIf
+	
+	If g_SelectedInfo Not= ~~ Then
+		calcTop = calcTop + topOffset + 24
+		fldDetailsInfo.Text = g_SelectedInfo
+		fldDetailsInfo.Top = calcTop
+	EndIf
+	
+End Sub
+
+Sub DeletePassword()
+	dbPosition(pwdDatabase, selectedPasswordIndexSaved, 0)
+	
+	' just clear the entry. Deleting the whole entry 
+	' is no thing here?
+	dbPut(pwdDatabase, ~~, ~~, ~~, ~~)
+	'dbDelete(pwdDatabase, selectedPasswordIndexSaved)
+	
+	ResetSelectedPassword()
+	
+	' go back to the main form
+	NextForm ~Form1003~
+End Sub
+"
+0
+"Sub Form1026_After()
+
+End Sub"
+"Sub Form1026_Event()
+	Dim eventType as Integer
+	
+	eventType = GetEventType()
+	
+	If eventType = NsbFormClose Then
+		Call ResetDetailsFields
+	EndIf
+End Sub"
+0,0,0,0
+"fld"
+1
+#FALSE#,#FALSE#,#TRUE#,#FALSE#,#TRUE#,80,#FALSE#,#FALSE#,#FALSE#
+"obj"
+3
+"fld","fldDetailsName",1054,4,20,16,152,#TRUE#,2,"",0,0,0
+""
+"fld"
+1
+#FALSE#,#FALSE#,#FALSE#,#FALSE#,#TRUE#,80,#FALSE#,#FALSE#,#FALSE#
+"obj"
+3
+"fld","fldDetailsUserID",1056,4,52,32,152,#TRUE#,7,"",0,0,0
+""
+"fld"
+1
+#FALSE#,#FALSE#,#FALSE#,#FALSE#,#TRUE#,30,#FALSE#,#FALSE#,#FALSE#
+"obj"
+3
+"fld","fldDetailsPassword",1058,4,76,32,152,#TRUE#,7,"",0,0,0
+""
+"fld"
+1
+#FALSE#,#FALSE#,#FALSE#,#FALSE#,#TRUE#,160,#FALSE#,#TRUE#,#FALSE#
+"obj"
+3
+"fld","fldDetailsInfo",1060,4,104,28,148,#TRUE#,0,"",0,0,0
+""
+"lbl"
+1
+"obj"
+3
+"lbl","lblDetailsUserID",1062,4,40,11,31,#TRUE#,0,"User ID:",0,0,0
+""
+"lbl"
+1
+"obj"
+3
+"lbl","lblDetailsPassword",1063,4,64,11,39,#TRUE#,0,"Passwort:",0,0,0
+""
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","btnClose",1027,1,144,12,44,#TRUE#,0,"Fertig",0,0,0
+"Sub object1027()
+	NextForm ~Form1003~
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","btnEdit",1037,58,144,12,44,#TRUE#,0,"Ändern",0,0,0
+"Sub object1037()
+	NextForm ~frmEdit~
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","btnDetailsDelete",1076,115,144,12,44,#TRUE#,0,"Löschen",0,0,0
+"Sub object1076()
+	Dim result as Integer
+	
+	result = Alert(~PasswortManager~, ~Wirklich löschen?~, 1, ~Ja~, ~Abbrechen~)
+	
+	If result = 0 Then
+		DeletePassword()
+	EndIf
+End Sub"
+"vew"
+4,1039,#FALSE#,#TRUE#,#TRUE#,0,0,0,160,160,0,#FALSE#,#TRUE#
+"Passwort ändern"
+"frmEdit"
+"Sub Form1039_Before()
+	If activeForm Not= ~frmEdit~ Then
+		activeForm = ~frmEdit~
+		
+		Call FillValues
+	EndIf
+End Sub
+	
+Sub ResetEditFields()
+	fldEditName.Text = ~~
+	fldEditUserID.Text = ~~
+	fldEditPassword.Text = ~~
+	fldEditInfo.Text = ~~
+End Sub
+
+Sub FillValues()
+	fldEditName.Text = g_SelectedName
+	fldEditUserID.Text = g_SelectedUserID
+	fldEditPassword.Text = g_SelectedPassword
+	fldEditInfo.Text = g_SelectedInfo
+	fldEditName.SetFocus
+End Sub"
+0
+"Sub Form1039_After()
+
+End Sub"
+"Sub Form1039_Event()
+	Dim eventType as Integer
+	
+	eventType = GetEventType()
+	
+	If eventType = NsbFormClose Then
+		Call ResetEditFields
+	EndIf
+End Sub"
+0,0,0,0
+"fld"
+1
+#TRUE#,#TRUE#,#FALSE#,#FALSE#,#TRUE#,160,#FALSE#,#TRUE#,#FALSE#
+"obj"
+3
+"fld","fldEditInfo",1042,44,80,60,112,#TRUE#,0,"",0,0,0
+""
+"lbl"
+1
+"obj"
+3
+"lbl","Label1044",1044,23,80,11,18,#TRUE#,0,"Info:",0,0,0
+""
+"lbl"
+1
+"obj"
+3
+"lbl","Label1045",1045,2,60,11,39,#TRUE#,0,"Passwort:",0,0,0
+""
+"fld"
+1
+#TRUE#,#TRUE#,#TRUE#,#FALSE#,#TRUE#,80,#FALSE#,#FALSE#,#FALSE#
+"obj"
+3
+"fld","fldEditPassword",1046,44,60,12,112,#TRUE#,0,"",0,0,0
+""
+"fld"
+1
+#TRUE#,#TRUE#,#TRUE#,#FALSE#,#TRUE#,80,#FALSE#,#FALSE#,#FALSE#
+"obj"
+3
+"fld","fldEditUserID",1048,44,40,12,112,#TRUE#,0,"",0,0,0
+""
+"lbl"
+1
+"obj"
+3
+"lbl","Label1050",1050,10,40,11,31,#TRUE#,0,"User ID:",0,0,0
+""
+"lbl"
+1
+"obj"
+3
+"lbl","Label1051",1051,15,20,11,26,#TRUE#,0,"Name:",0,0,0
+""
+"fld"
+1
+#TRUE#,#TRUE#,#TRUE#,#FALSE#,#TRUE#,80,#FALSE#,#FALSE#,#FALSE#
+"obj"
+3
+"fld","fldEditName",1052,44,20,12,112,#TRUE#,0,"",0,0,0
+""
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","btnSaveEdit",1040,1,144,12,48,#TRUE#,0,"Speichern",0,0,0
+"Sub object1040()
+	Dim checkInputsResult as Short
+	checkInputsResult = EditCheckInputs()
+	If checkInputsResult = 0 Then
+		Exit Sub
+	EndIf
+	
+	Dim saveResult as Short
+	saveResult = EditSavePasswordInfo()
+	
+	If saveResult = 1 Then
+		NextForm ~frmDetails~
+	EndIf
+End Sub
+
+Function EditCheckInputs() as Short 
+	If fldEditName.Text = ~~ Then
+		MsgBox ~Ein Name fehlt!~
+		EditCheckInputs = 0
+		Exit Function
+	ElseIf fldEditPassword.Text = ~~ Then
+		MsgBox ~Ein Passwort fehlt!~
+		EditCheckInputs = 0
+		Exit Function
+	EndIf
+	
+	EditCheckInputs = 1
+End Function
+
+Function EditSavePasswordInfo() as Short
+	Dim result as Integer
+	
+	' set the database position
+	dbPosition(pwdDatabase, selectedPasswordIndexSaved, 0)
+	
+	result = dbPut(pwdDatabase, fldEditName.Text, fldEditUserID.Text, fldEditPassword.Text, fldEditInfo.Text)
+	
+	If result = 0 Then
+		SetSelectedPassword(fldEditName.Text, fldEditUserID.Text, fldEditPassword.Text, fldEditInfo.Text)
+		
+		MsgBox ~Passwort geändert!~
+		
+		EditSavePasswordInfo = 1
+	Else
+		MsgBox ~Fehler ~ + str(result) + ~ beim Speichern des Passworts!~
+		
+		EditSavePasswordInfo = 0
+		
+	EndIf
+		
+End Function
+"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","btnCloseEdit",1041,56,144,12,48,#TRUE#,0,"Abbrechen",0,0,0
+"Sub object1041()
+	NextForm ~frmDetails~
+End Sub"
+"vew"
+4,1065,#FALSE#,#TRUE#,#TRUE#,0,0,0,160,160,0,#TRUE#,#TRUE#
+"      Björn's Passwort Manager      "
+"frmLogin"
+"
+
+Sub Form1065_Before()
+	
+End Sub
+
+Sub CheckLoginPin()
+	If enteredUserPassword = userPassword Then
+		NextForm ~Form1003~
+	ElseIf len(enteredUserPassword) >= 4 Then
+		Delay 0.5
+		
+		fldLoginPassword.Text = ~xxxx~
+		
+		Delay 0.5
+		
+		enteredUserPassword = ~~
+		fldLoginPassword.Text = enteredUserPassword
+	EndIf
+End Sub
+"
+0
+""
+""
+0,0,0,0
+"fld"
+1
+#FALSE#,#TRUE#,#TRUE#,#TRUE#,#TRUE#,4,#FALSE#,#FALSE#,#FALSE#
+"obj"
+3
+"fld","fldLoginPassword",1066,68,72,12,24,#TRUE#,7,"",0,0,0
+""
+"lbl"
+1
+"obj"
+3
+"lbl","Label1068",1068,36,56,11,88,#TRUE#,0,"Bitte tippe die PIN ein:",0,0,0
+""
+"lbl"
+1
+"obj"
+3
+"lbl","Label1069",1069,36,16,11,83,#TRUE#,0,"v1.0 von Björn Bosse",0,0,0
+""
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","btnLoginNum1",1071,52,96,16,16,#TRUE#,0,"1",0,0,0
+"Sub object1071()
+	enteredUserPassword = enteredUserPassword + ~1~
+	fldLoginPassword.Text = enteredUserPassword
+	
+	Call CheckLoginPin
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","btnLoginNum2",1072,72,96,16,16,#TRUE#,0,"2",0,0,0
+"Sub object1072()
+	enteredUserPassword = enteredUserPassword + ~2~
+	fldLoginPassword.Text = enteredUserPassword
+	
+	Call CheckLoginPin
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","btnLoginNum3",1073,92,96,16,16,#TRUE#,0,"3",0,0,0
+"Sub object1073()
+	enteredUserPassword = enteredUserPassword + ~3~
+	fldLoginPassword.Text = enteredUserPassword
+	
+	Call CheckLoginPin
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","btnLoginNum4",1106,52,116,16,16,#TRUE#,0,"4",0,0,0
+"Sub object1106()
+	enteredUserPassword = enteredUserPassword + ~4~
+	fldLoginPassword.Text = enteredUserPassword
+	
+	Call CheckLoginPin
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","btnLoginNum5",1107,72,116,16,16,#TRUE#,0,"5",0,0,0
+"Sub object1107()
+	enteredUserPassword = enteredUserPassword + ~5~
+	fldLoginPassword.Text = enteredUserPassword
+	
+	Call CheckLoginPin
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","btnLoginNum6",1108,92,116,16,16,#TRUE#,0,"6",0,0,0
+"Sub object1108()
+	enteredUserPassword = enteredUserPassword + ~6~
+	fldLoginPassword.Text = enteredUserPassword
+	
+	Call CheckLoginPin
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","btnLoginNum7",1109,52,136,16,16,#TRUE#,0,"7",0,0,0
+"Sub object1109()
+	enteredUserPassword = enteredUserPassword + ~7~
+	fldLoginPassword.Text = enteredUserPassword
+	
+	Call CheckLoginPin
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","btnLoginNum8",1110,72,136,16,16,#TRUE#,0,"8",0,0,0
+"Sub object1110()
+	enteredUserPassword = enteredUserPassword + ~8~
+	fldLoginPassword.Text = enteredUserPassword
+	
+	Call CheckLoginPin
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","btnLoginNum9",1111,92,136,16,16,#TRUE#,0,"9",0,0,0
+"Sub object1111()
+	enteredUserPassword = enteredUserPassword + ~9~
+	fldLoginPassword.Text = enteredUserPassword
+	
+	Call CheckLoginPin
+End Sub"
+"vew"
+4,1089,#FALSE#,#TRUE#,#TRUE#,0,0,0,160,160,0,#FALSE#,#TRUE#
+"PIN ändern"
+"frmChangePIN"
+"Sub Form1089_Before()
+	If activeForm Not= ~frmChangePIN~ Then
+		activeForm = ~frmChangePIN~
+		
+		fldOldPin.Text = ~~
+		fldNewPIN.Text = ~~
+		fldOldPin.SetFocus
+	EndIf
+End Sub"
+0
+""
+""
+0,0,0,0
+"fld"
+1
+#TRUE#,#TRUE#,#TRUE#,#FALSE#,#TRUE#,4,#FALSE#,#FALSE#,#TRUE#
+"obj"
+3
+"fld","fldOldPin",1092,84,76,12,50,#TRUE#,0,"",0,0,0
+""
+"lbl"
+1
+"obj"
+3
+"lbl","Label1094",1094,24,76,11,54,#TRUE#,0,"Aktueller PIN:",0,0,0
+""
+"fld"
+1
+#TRUE#,#TRUE#,#TRUE#,#FALSE#,#TRUE#,4,#FALSE#,#FALSE#,#TRUE#
+"obj"
+3
+"fld","fldNewPIN",1095,84,92,12,50,#TRUE#,0,"",0,0,0
+""
+"lbl"
+1
+"obj"
+3
+"lbl","Label1097",1097,24,92,11,42,#TRUE#,0,"Neuer PIN:",0,0,0
+""
+"lbl"
+1
+"obj"
+3
+"lbl","Label1100",1100,24,28,11,108,#TRUE#,0,"Der PIN muss 4-stellig sein.",0,0,0
+""
+"lbl"
+1
+"obj"
+3
+"lbl","Label1104",1104,32,40,11,88,#TRUE#,0,"Ziffer 0 nicht erlaubt.",0,0,0
+""
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","Button1098",1098,1,144,12,48,#TRUE#,0,"Speichern",0,0,0
+"Sub object1098()
+	If userPassword Not= fldOldPin.Text Then
+		Alert(~PasswortManager~, ~Der aktuelle PIN ist falsch!~, 3, ~OK~)
+		Exit Sub
+	EndIf
+	
+	If fldNewPIN.Text = ~~ Or len(fldnewPIN.Text) Not= 4 Then
+		Alert(~PasswortManager~, ~Der neue PIN ist nicht 4 Ziffern lang!~, 3, ~OK~)
+		Exit Sub
+	EndIf
+	
+	Dim result as Integer
+	result = dbUpdate(settingsDatabase, ~PIN~, fldNewPIN.Text)
+	userPassword = fldNewPIN.Text
+	
+	Alert(~PasswortManager~, ~PIN wurde geändert!~, 0, ~OK~)
+	
+	NextForm ~Form1003~
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","Button1099",1099,56,144,12,48,#TRUE#,0,"Abbrechen",0,0,0
+"Sub object1099()
+	NextForm ~Form1003~
+End Sub"
+"end"

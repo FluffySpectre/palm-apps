@@ -1,0 +1,229 @@
+"mdl"
+7
+"GameOfLife","appl","Bjoe",1005,505,0
+"Sub Project_Startup()
+	Global fps as Integer
+	fps = 5
+	Global cellSize as Integer
+	Global mapCols as Integer, mapRows as Integer
+	Global yOffset as Integer
+	
+	Global cells(12, 11) as Short ' 192 = 10 * 16
+	Global nextCells(12, 11) as Short
+		
+	Global simPaused as Short
+	simPaused = 1
+	
+	cellSize = 13
+	mapCols = 12
+	mapRows = 11
+	yOffset = 15 ' y offset from the top of the form
+	
+	' setup the map
+	Call RandomizeCells
+	
+	' R tetronimo
+	'cells(6, 5) = 1
+	'cells(7, 5) = 1
+	'cells(6, 6) = 1
+	'cells(7, 7) = 1
+	'cells(5, 6) = 1
+	
+	' glider
+	'cells(6, 5) = 1
+	'cells(7, 6) = 1
+	'cells(7, 7) = 1
+	'cells(6, 7) = 1
+	'cells(5, 7) = 1
+	
+	' kick of the update loop
+	SysInfoSet(~Timer~, 1000/fps)
+End Sub
+
+Sub RandomizeCells()
+	Dim i as Integer, j as Integer
+	For i = 1 To mapCols
+		For j = 1 To mapRows
+			If (Rand() < 0.5)
+				cells(i,j) = 0
+			Else
+				cells(i,j) = 1
+			EndIf
+		Next
+	Next
+End Sub
+
+Function CountNeighbors(i as Integer, j as Integer) as Integer
+	Dim neighbors as Integer
+	Dim x as Integer, y as Integer
+	Dim col as Integer, row as Integer
+	
+	For x = -1 To 1
+		For y = -1 To 1
+			'col = Mod(x + i + mapCols, mapCols)
+     		'row = Mod(y + j + mapRows, mapRows)
+     		
+     		col = x + i
+     		row = y + j
+     		
+     		If col < 1 Then
+     			col = 1
+     		EndIf
+     		If row < 1 Then
+     			row = 1
+     		EndIf
+     		
+     		If col > mapCols Then
+     			col = 1
+     		EndIf
+     		If row > mapRows Then
+     			row = 1
+     		EndIf
+ 
+     			
+     		
+     		'MsgBox str(col) + ~, ~ + str(row)
+     		
+     	 	neighbors = neighbors + cells(col, row)
+		Next
+	Next
+	
+	' remove ourself
+	neighbors = neighbors - cells(i, j)
+	
+	CountNeighbors = neighbors
+End Function
+	
+Sub Generate()
+	Dim i as Integer, j as Integer
+	Dim cell as Short, newCell as Short
+	Dim neighbors as Integer
+	Dim hasChanged as Short 
+	
+	For i = 1 To mapCols
+		For j = 1 To mapRows
+			cell = cells(i, j)
+			
+			neighbors = CountNeighbors(i, j)
+			
+			newCell = 0
+			If cell = 0 And neighbors = 3 Then
+				newCell = 1
+			ElseIf cell = 1 And neighbors < 2 Then
+				newCell = 0
+			ElseIf cell = 1 And neighbors > 3 Then
+				newCell = 0
+			Else
+				newCell = cell
+			EndIf
+			
+			If newCell Not= cell Then
+				hasChanged = 1
+			EndIf
+			
+			nextCells(i, j) = newCell
+		Next
+	Next
+	
+	' copy the new state to the current one
+	For i = 1 To mapCols
+		For j = 1 To mapRows
+			cells(i, j) = nextCells(i, j)
+		Next
+	Next
+	
+	If hasChanged = 0 Then
+		simPaused = 1
+	EndIf
+End Sub
+
+Sub NewGame()
+	Call RandomizeCells
+	simPaused = 0
+End Sub
+
+"
+0
+0
+"GameOfLife"
+"1.0"
+""
+"vew"
+4,1003,#FALSE#,#TRUE#,#TRUE#,0,0,0,160,160,0,#FALSE#,#TRUE#
+"GameOfLife"
+"Form1003"
+"Sub Form1003_Before()
+
+End Sub"
+0
+"Sub Form1003_After()
+	' clear
+	Call ClearLowerScreen
+	
+	' draw the grid
+	Dim padding as Integer
+	padding = 1
+	Dim i as Integer, j as Integer
+	For i = 1 To mapCols
+		For j = 1 To mapRows
+			If cells(i, j) = 1
+				FillRectangle 2 + padding + (i-1) * cellSize, padding + (j-1) * cellSize + yOffset, cellSize - padding - padding, cellSize - padding - padding, 0, nsbNormal
+			EndIf
+		Next
+	Next
+	
+	' 
+	If simPaused = 1 Then
+		Button1005.Text = ~Start~
+	Else
+		Button1005.Text = ~Pause~
+	EndIf
+End Sub
+	
+Sub ClearLowerScreen()
+   FillRectangle 0,15,160,145,0,nsbInverted
+End Sub
+"
+"Sub Form1003_Event()
+	Dim eventType as Integer
+	
+	eventType = GetEventType()
+	
+	' main update loop
+	If eventType = nsbTimer Then
+		If simPaused = 0 Then
+			' generate a new generation
+			Call Generate
+			Redraw
+		EndIf
+		
+		SysInfoSet(~Timer~, 1000/fps)
+	EndIf
+End Sub"
+0,0,0,0
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","Button1004",1004,84,1,12,36,#TRUE#,0,"Reset",0,0,0
+"Sub object1004()
+	Call RandomizeCells
+	Redraw
+End Sub"
+"but"
+1
+#TRUE#,#TRUE#,#TRUE#
+"obj"
+3
+"but","Button1005",1005,123,1,12,36,#TRUE#,0,"Start",0,0,0
+"Sub object1005()
+	If simPaused = 0 Then
+		simPaused = 1
+		Button1005.Text = ~Start~
+	Else
+		simPaused = 0
+		Button1005.Text = ~Pause~
+	EndIf
+End Sub"
+"end"

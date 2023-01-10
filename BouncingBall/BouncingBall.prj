@@ -1,0 +1,217 @@
+"mdl"
+7
+"BouncingBall","appl","Bjoe",1014,505,0
+"Sub Project_Startup()
+	Global graphWindowCreated as Short
+	
+	Global ballSize as Integer
+	ballSize = 20
+	Global ballX as Float
+	Global ballY as Float
+	Global lastBallX as Float
+	Global lastBallY as Float
+	Global ballVelX as Float
+	Global ballVelY as Float
+	Global ballAccX as Float
+	Global ballAccY as Float
+	Global ballFrictionCoeff as Float
+	ballFrictionCoeff = 0.95
+	Global gravity as Float
+	gravity = 9.81 '4.8 '9.81
+	
+	Global bounces as Integer
+	Global score as Integer 
+	
+	Global pickupX as Integer
+	Global pickupY as Integer
+	Global pickupVelX as Integer
+	Global pickupSize as Integer
+	pickupSize = 10
+	Global pickupCollected as Short
+	
+	ballX = 80
+	ballY = 80
+	lastBallX = ballX
+	lastBallY = ballY
+	
+	'
+	Global lastFrameTime as Time
+	lastFrameTime = Now()
+	
+	' setup update loop
+	Global fps as Integer
+	fps = 10
+	SysInfoSet(~Timer~, 1000 / fps) ' 30 FPS
+	
+	Call SpawnPickup
+End Sub
+
+Sub SpawnPickup()
+	pickupY = 15 + Rand() * 135
+	
+	If Rand() < 0.5 Then
+		pickupX = 1
+		pickupVelX = -5
+	Else
+		pickupX = 159
+		pickupVelX = 5
+	EndIf
+	pickupCollected = 0
+End Sub
+	
+"
+0
+0
+"BouncingBall"
+"1.0"
+""
+"vew"
+4,1003,#FALSE#,#TRUE#,#TRUE#,0,0,0,160,160,0,#FALSE#,#TRUE#
+"Bouncing Ball"
+"Form1003"
+"Sub Form1003_Before()
+
+End Sub"
+0
+"Sub Form1003_After()
+	'If graphWindowCreated = 0 Then
+	'	graphWindowCreated = 1
+	'	CreateWindow ~winGraphics~,0,15,160,145
+	'	SetCurrentWindow ~winGraphics~
+	'	DrawChars ~New Window~, 5,10 ' draws string in window area
+	'EndIf
+	
+	'DrawLine 10,20,100,120,nsbNormal
+	'FillRectangle 0,15,160,145,0,nsbGray
+	'Call ClearLowerScreen
+	'FillRectangle lastBallX-10,0,20,15,0,nsbInverted
+	
+	
+	'FillRectangle lastBallX-10,0,ballSize,160,0,nsbInverted
+	
+	'If pickupCollected = 1 Then
+	'	Call ClearLowerScreen
+	'	Call SpawnPickup
+	'Else
+	'	FillRectangle 0,pickupY,160,pickupSize,0,nsbInverted
+	'EndIf
+	
+	'FillRectangle lastBallX-10,lastBallY-10,20,20,0,nsbInverted
+	
+	'DrawRectangle pickupX, pickupY, pickupSize, pickupSize,0,nsbNormal
+	
+	'Call DrawCircle ballX, ballY, ballSize/2
+	'Call DrawCircleInverted(ballX + 3, ballY - 3, 1) ' eye
+	'Call DrawCircleInverted(ballX - 3, ballY - 3, 1) ' eye
+	
+	'fldScore.Text = ~Score: ~ + str(score)
+End Sub
+
+"
+"Sub Form1003_Event()
+	Dim eventType as Integer
+	
+	eventType = GetEventType()
+	
+	' input
+	If eventType = nsbPenUp Or eventType = nsbKeyOrButton
+		ballAccY = -20 '-20
+	EndIf
+	
+	' main update loop
+	If eventType = nsbTimer Then
+		
+		' calculate frame delta
+		'Dim currentFrameTime as Time
+		'currentFrameTime = Now()
+		'frameDeltaTime = currentFrameTime - lastFrameTime
+		'lastFrameTime = currentFrameTime
+		
+		' calculate ball velocity and position
+		ballVelY = ballVelY + ballAccY
+		ballVelY = ballVelY + gravity
+		ballY = ballY + ballVelY '* frameDeltaTime
+		
+		' calculate pickups
+		If pickupCollected = 0 Then
+			pickupX = pickupX + pickupVelX
+			If (pickupX + pickupSize > 158) Then
+				pickupVelX = -5
+			EndIf
+			If (pickupX < 2) Then
+				pickupVelX = 5
+			EndIf
+			
+			' calculate collisionwith ball
+			
+			'rect1.x < rect2.x + rect2.w &&
+    		'rect1.x + rect1.w > rect2.x &&
+    		'rect1.y < rect2.y + rect2.h &&
+    		'rect1.h + rect1.y > rect2.y
+			
+			' TODO: FIX ME
+			If ballX - ballSize / 2 < pickupX + pickupSize And ballX + ballSize / 2 > pickupX And ballY < pickupY + pickupSize And ballY + ballSize > pickupY Then
+				pickupCollected = 1
+				score = score + 10
+			EndIf
+		EndIf
+		
+		' collision
+		If ballY > 150 Then
+			ballY = 150
+			ballVelY = ballVelY * -1 * ballFrictionCoeff
+			
+			'If Abs(ballY - lastBallY) > 1 Then
+			'	bounces = bounces + 1
+			'EndIf
+		EndIf
+		
+		lastBallY = ballY
+		ballAccY = 0
+		
+		' drawing
+		FillRectangle lastBallX-10,0,ballSize,160,0,nsbInverted
+	
+		If pickupCollected = 1 Then
+			Call ClearLowerScreen
+			Call SpawnPickup
+		Else
+			FillRectangle 0,pickupY,160,pickupSize,0,nsbInverted
+		EndIf
+		
+		'FillRectangle lastBallX-10,lastBallY-10,20,20,0,nsbInverted
+		
+		DrawRectangle pickupX, pickupY, pickupSize, pickupSize,0,nsbNormal
+		
+		Call DrawCircle ballX, ballY, ballSize/2
+		'Call DrawCircleInverted(ballX + 3, ballY - 3, 1) ' eye
+		'Call DrawCircleInverted(ballX - 3, ballY - 3, 1) ' eye
+		
+		fldScore.Text = ~Score: ~ + str(score)
+		
+		'Redraw
+		
+		SysInfoSet(~Timer~, 1000 / fps)
+	End If
+End Sub
+	
+Sub DrawCircle(x as Integer, y as Integer, r as Integer)
+	FillRectangle X-R, Y-R, 2*R, 2*R, r-0.5, nsbNormal
+End Sub
+
+Sub DrawCircleInverted(x as Integer, y as Integer, r as Integer)
+	FillRectangle X-R, Y-R, 2*R, 2*R, r-0.5, nsbInverted
+End Sub
+
+Sub ClearLowerScreen()
+   FillRectangle 0,15,160,145,0,nsbInverted
+End Sub"
+0,0,0,0
+"fld"
+1
+#FALSE#,#FALSE#,#TRUE#,#FALSE#,#FALSE#,80,#FALSE#,#FALSE#,#FALSE#
+"obj"
+3
+"fld","fldScore",1012,108,1,12,50,#TRUE#,0,"",0,0,0
+""
+"end"
